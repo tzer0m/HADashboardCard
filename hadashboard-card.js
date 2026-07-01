@@ -24,6 +24,8 @@ class HADashboardCard extends HTMLElement {
                     grid-template-columns: 1fr 1fr;
                     gap: 8px;
                     padding: 12px;
+                    box-sizing: border-box;
+                    overflow: hidden;
                 }
                 .service-row {
                     display: flex;
@@ -166,6 +168,9 @@ class HADashboardCard extends HTMLElement {
                 .popout-value a {
                     color: var(--primary-color);
                     text-decoration: none;
+                }
+                ha-card {
+                    overflow: hidden;
                 }
             </style>
 
