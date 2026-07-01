@@ -247,29 +247,38 @@ class HADashboardCard extends HTMLElement {
 
             grid.querySelectorAll(".service-row").forEach(row => {
                 row.addEventListener("click", () => {
-                    const entity = this._hass.states[row.dataset.entity];
-                    const attr = entity.attributes;
-                    const name = attr.friendly_name.replace("HADashboard ", "");
-
-                    this.shadowRoot.getElementById("popout-title").textContent = name;
-                    this.shadowRoot.getElementById("popout-favicon").src = this._faviconUrl(attr);
-
-                    const deployEntity = Object.values(this._hass.states).find(
-                        s => s.entity_id.startsWith("sensor.") &&
-                             s.attributes.friendly_name === `HADashboard ${name} Deploy`
-                    );
-
+                    const ms = attr.response_time_ms;
+                    const msColour = ms == null ? "var(--secondary-text-color)"
+                        : ms <= 200 ? "#198754"
+                        : ms <= 500 ? "#e8a33d"
+                        : "#dc3545";
+                    
+                    const lastChecked = attr.last_checked
+                        ? new Date(attr.last_checked).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "UTC" }) + " UTC"
+                        : "-";
+                    
+                    const statusBadge = `<span class="badge ${entity.state === "on" ? "online" : "offline"}">${entity.state === "on" ? "Online" : "Offline"}</span>`;
+                    
+                    const deployState = deployEntity ? deployEntity.state : null;
+                    const deployColour = deployState === "passing" ? "#198754"
+                        : deployState === "failing" ? "#dc3545"
+                        : deployState === "running" ? "#e8a33d"
+                        : "var(--secondary-text-color)";
+                    const deployBadge = deployState
+                        ? `<span class="badge" style="background:${deployColour};color:#fff;">${deployState}</span>`
+                        : "-";
+                    
                     const rows = [
-                        ["Status", entity.state === "on" ? "Online" : "Offline"],
+                        ["Status", statusBadge],
                         ["URL", attr.url ? `<a href="${attr.url}" target="_blank">${attr.url}</a>` : "-"],
                         ["Type", attr.type ?? "-"],
                         ["Access", attr.access ?? "-"],
                         ["Device", attr.device ?? "-"],
                         ["Local IP", attr.local_ip ?? "-"],
                         ["Local Port", attr.local_port != null ? String(attr.local_port) : "-"],
-                        ["Response Time", attr.response_time_ms != null ? `${attr.response_time_ms} ms` : "-"],
-                        ["Last Checked", attr.last_checked ?? "-"],
-                        ["Deploy Status", deployEntity ? deployEntity.state : "-"],
+                        ["Response Time", ms != null ? `<span style="color:${msColour};font-weight:600;">${ms} ms</span>` : "-"],
+                        ["Last Checked", lastChecked],
+                        ["Deploy Status", deployBadge],
                     ];
 
                     this.shadowRoot.getElementById("popout-rows").innerHTML = rows.map(([label, value]) => `
