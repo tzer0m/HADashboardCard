@@ -13,15 +13,13 @@ This card requires the [HADashboard integration](https://github.com/tzer0m/HADas
 1. In Home Assistant, go to HACS → three-dot menu → **Custom repositories**.
 2. Add `https://github.com/tzer0m/HADashboardCard`, category **Dashboard**.
 3. Find **HADashboard Card** in HACS and install it.
-4. Go to Settings → Dashboards → three-dot menu → **Resources**.
-5. Add `/hacsfiles/HADashboardCard/hadashboard-card.js` as a **JavaScript module**.
-6. Hard reload the browser (**Ctrl+Shift+R**).
+4. Restart Home Assistant.
 
 ### Manual
 
 1. Copy `hadashboard-card.js` to `www/community/HADashboardCard/` in your Home Assistant config directory.
-2. Add `/hacsfiles/HADashboardCard/hadashboard-card.js` as a JavaScript module resource.
-3. Hard reload the browser.
+2. Add `/local/community/HADashboardCard/hadashboard-card.js` as a **JavaScript module** resource under Settings → Dashboards → Resources.
+3. Restart Home Assistant.
 
 ## Usage
 
