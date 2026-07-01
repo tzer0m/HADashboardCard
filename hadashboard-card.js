@@ -193,7 +193,7 @@ class HADashboardCard extends HTMLElement {
                         const accessIcon = access === "Global" ? "🌐" : "🏠";
                         const faviconUrl = e.attributes.favicon_url
                             ? e.attributes.favicon_url
-                            : `https://www.google.com/s2/favicons?domain=${encodeURIComponent(e.attributes.url ?? "")}&sz=64`;
+                            : `https://tzer0m.co.uk/Favicon?url=${encodeURIComponent(e.attributes.url ?? "")}`;
 
                         return `
                             <div class="service-row" data-entity="${e.entity_id}">
@@ -242,7 +242,7 @@ class HADashboardCard extends HTMLElement {
                 popoutTitle.textContent = name;
                 popoutFavicon.src = attr.favicon_url
                     ? attr.favicon_url
-                    : `https://www.google.com/s2/favicons?domain=${encodeURIComponent(attr.url ?? "")}&sz=64`;
+                    : `https://tzer0m.co.uk/Favicon?url=${encodeURIComponent(attr.url ?? "")}`;
 
                 const rows = [
                     ["Status", entity.state === "on" ? "Online" : "Offline"],
