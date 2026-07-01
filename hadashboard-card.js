@@ -39,39 +39,41 @@ class HADashboardCard extends HTMLElement {
                     transition: background 0.15s;
                     min-width: 0;
                     overflow: hidden;
+                    min-height: 44px;
+                    box-sizing: border-box;
                 }
                 .service-row:hover {
                     background: var(--secondary-background-color);
                 }
                 .favicon {
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 6px;
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 4px;
                     object-fit: contain;
                     flex-shrink: 0;
                 }
                 .favicon-fallback {
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 6px;
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 4px;
                     background: var(--secondary-background-color);
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 13px;
+                    font-size: 10px;
                     font-weight: bold;
                     color: var(--primary-text-color);
                     flex-shrink: 0;
                 }
                 .name {
                     flex: 1;
-                    font-size: 12px;
+                    font-size: 11px;
                     font-weight: 500;
                     color: var(--primary-text-color);
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
+                    white-space: normal;
+                    word-break: break-word;
                     min-width: 0;
+                    line-height: 1.3;
                 }
                 .ms {
                     font-size: 11px;
