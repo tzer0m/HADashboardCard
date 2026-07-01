@@ -47,6 +47,13 @@ class HADashboardCard extends HTMLElement {
                </svg>`;
     }
 
+    _msColour(ms) {
+        return ms == null ? "var(--secondary-text-color)"
+            : ms <= 200 ? "#198754"
+            : ms <= 500 ? "#e8a33d"
+            : "#dc3545";
+    }
+
     _build() {
         this.shadowRoot.innerHTML = `
             <style>
@@ -225,7 +232,6 @@ class HADashboardCard extends HTMLElement {
         const grid = this.shadowRoot.getElementById("grid");
         const overlay = this.shadowRoot.getElementById("overlay");
 
-        // Only rebuild grid rows if entity list has changed
         const currentIds = [...grid.querySelectorAll(".service-row")].map(r => r.dataset.entity).join(",");
         const newIds = entities.map(e => e.entity_id).join(",");
 
@@ -247,18 +253,25 @@ class HADashboardCard extends HTMLElement {
 
             grid.querySelectorAll(".service-row").forEach(row => {
                 row.addEventListener("click", () => {
+                    const entity = this._hass.states[row.dataset.entity];
+                    const attr = entity.attributes;
+                    const name = attr.friendly_name.replace("HADashboard ", "");
+
+                    this.shadowRoot.getElementById("popout-title").textContent = name;
+                    this.shadowRoot.getElementById("popout-favicon").src = this._faviconUrl(attr);
+
+                    const deployEntity = Object.values(this._hass.states).find(
+                        s => s.entity_id.startsWith("sensor.") &&
+                             s.attributes.friendly_name === `HADashboard ${name} Deploy`
+                    );
+
                     const ms = attr.response_time_ms;
-                    const msColour = ms == null ? "var(--secondary-text-color)"
-                        : ms <= 200 ? "#198754"
-                        : ms <= 500 ? "#e8a33d"
-                        : "#dc3545";
-                    
                     const lastChecked = attr.last_checked
                         ? new Date(attr.last_checked).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "UTC" }) + " UTC"
                         : "-";
-                    
+
                     const statusBadge = `<span class="badge ${entity.state === "on" ? "online" : "offline"}">${entity.state === "on" ? "Online" : "Offline"}</span>`;
-                    
+
                     const deployState = deployEntity ? deployEntity.state : null;
                     const deployColour = deployState === "passing" ? "#198754"
                         : deployState === "failing" ? "#dc3545"
@@ -267,7 +280,7 @@ class HADashboardCard extends HTMLElement {
                     const deployBadge = deployState
                         ? `<span class="badge" style="background:${deployColour};color:#fff;">${deployState}</span>`
                         : "-";
-                    
+
                     const rows = [
                         ["Status", statusBadge],
                         ["URL", attr.url ? `<a href="${attr.url}" target="_blank">${attr.url}</a>` : "-"],
@@ -276,7 +289,7 @@ class HADashboardCard extends HTMLElement {
                         ["Device", attr.device ?? "-"],
                         ["Local IP", attr.local_ip ?? "-"],
                         ["Local Port", attr.local_port != null ? String(attr.local_port) : "-"],
-                        ["Response Time", ms != null ? `<span style="color:${msColour};font-weight:600;">${ms} ms</span>` : "-"],
+                        ["Response Time", ms != null ? `<span style="color:${this._msColour(ms)};font-weight:600;">${ms} ms</span>` : "-"],
                         ["Last Checked", lastChecked],
                         ["Deploy Status", deployBadge],
                     ];
@@ -293,21 +306,16 @@ class HADashboardCard extends HTMLElement {
             });
         }
 
-        // Always patch live values without rebuilding DOM
         entities.forEach(e => {
             const row = grid.querySelector(`[data-entity="${e.entity_id}"]`);
             if (!row) return;
 
             const ms = e.attributes.response_time_ms ?? null;
-            const msColour = ms === null ? "var(--secondary-text-color)"
-                : ms <= 200 ? "#198754"
-                : ms <= 500 ? "#e8a33d"
-                : "#dc3545";
             const isOnline = e.state === "on";
 
             const msEl = row.querySelector(".ms");
             msEl.textContent = ms !== null ? `${ms} ms` : "";
-            msEl.style.color = msColour;
+            msEl.style.color = this._msColour(ms);
 
             const badge = row.querySelector(".badge");
             badge.textContent = isOnline ? "Online" : "Offline";
