@@ -26,6 +26,10 @@ class HADashboardCard extends HTMLElement {
         `;
     }
 
+    setConfig(config) {
+        this.config = config;
+    }
+
     getCardSize() {
         return 3;
     }
