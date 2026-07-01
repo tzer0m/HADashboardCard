@@ -30,13 +30,15 @@ class HADashboardCard extends HTMLElement {
                 .service-row {
                     display: flex;
                     align-items: center;
-                    gap: 10px;
-                    padding: 10px 12px;
+                    gap: 6px;
+                    padding: 8px 10px;
                     border-radius: 10px;
                     background: var(--card-background-color);
                     border: 1px solid var(--divider-color);
                     cursor: pointer;
                     transition: background 0.15s;
+                    min-width: 0;
+                    overflow: hidden;
                 }
                 .service-row:hover {
                     background: var(--secondary-background-color);
@@ -63,15 +65,16 @@ class HADashboardCard extends HTMLElement {
                 }
                 .name {
                     flex: 1;
-                    font-size: 14px;
+                    font-size: 12px;
                     font-weight: 500;
                     color: var(--primary-text-color);
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
+                    min-width: 0;
                 }
                 .ms {
-                    font-size: 12px;
+                    font-size: 11px;
                     flex-shrink: 0;
                 }
                 .access-icon {
@@ -80,9 +83,9 @@ class HADashboardCard extends HTMLElement {
                     color: var(--secondary-text-color);
                 }
                 .badge {
-                    font-size: 12px;
+                    font-size: 11px;
                     font-weight: 600;
-                    padding: 2px 8px;
+                    padding: 2px 6px;
                     border-radius: 12px;
                     flex-shrink: 0;
                 }
