@@ -4,11 +4,22 @@ class HADashboardCard extends HTMLElement {
     }
 
     set hass(hass) {
+        this._hass = hass;
+
         if (!this.shadowRoot) {
             this.attachShadow({ mode: "open" });
         }
 
-        const entities = Object.values(hass.states)
+        if (!this._built) {
+            this._build();
+            this._built = true;
+        }
+
+        this._update();
+    }
+
+    _getEntities() {
+        return Object.values(this._hass.states)
             .filter(e =>
                 e.entity_id.startsWith("binary_sensor.") &&
                 e.attributes.friendly_name?.startsWith("HADashboard ")
@@ -16,9 +27,32 @@ class HADashboardCard extends HTMLElement {
             .sort((a, b) =>
                 a.attributes.friendly_name.localeCompare(b.attributes.friendly_name)
             );
+    }
 
+    _faviconUrl(attr) {
+        return attr.favicon_url
+            ? attr.favicon_url
+            : `https://tzer0m.co.uk/Favicon?url=${encodeURIComponent(attr.url ?? "")}`;
+    }
+
+    _accessIcon(access) {
+        return access === "Global"
+            ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+               </svg>`
+            : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"></path>
+               </svg>`;
+    }
+
+    _build() {
         this.shadowRoot.innerHTML = `
             <style>
+                ha-card {
+                    overflow: hidden;
+                }
                 .grid {
                     display: grid;
                     grid-template-columns: 1fr 1fr;
@@ -92,16 +126,9 @@ class HADashboardCard extends HTMLElement {
                     border-radius: 12px;
                     flex-shrink: 0;
                 }
-                .online {
-                    background: #198754;
-                    color: #fff;
-                }
-                .offline {
-                    background: #dc3545;
-                    color: #fff;
-                }
+                .online { background: #198754; color: #fff; }
+                .offline { background: #dc3545; color: #fff; }
 
-                /* Popout overlay */
                 .overlay {
                     display: none;
                     position: fixed;
@@ -111,9 +138,7 @@ class HADashboardCard extends HTMLElement {
                     align-items: center;
                     justify-content: center;
                 }
-                .overlay.open {
-                    display: flex;
-                }
+                .overlay.open { display: flex; }
                 .popout {
                     background: var(--card-background-color);
                     border-radius: 14px;
@@ -158,12 +183,8 @@ class HADashboardCard extends HTMLElement {
                     border-bottom: 1px solid var(--divider-color);
                     font-size: 13px;
                 }
-                .popout-row:last-child {
-                    border-bottom: none;
-                }
-                .popout-label {
-                    color: var(--secondary-text-color);
-                }
+                .popout-row:last-child { border-bottom: none; }
+                .popout-label { color: var(--secondary-text-color); }
                 .popout-value {
                     color: var(--primary-text-color);
                     font-weight: 500;
@@ -175,52 +196,10 @@ class HADashboardCard extends HTMLElement {
                     color: var(--primary-color);
                     text-decoration: none;
                 }
-                ha-card {
-                    overflow: hidden;
-                }
             </style>
 
             <ha-card>
-                <div class="grid">
-                    ${entities.map(e => {
-                        const name = e.attributes.friendly_name.replace("HADashboard ", "");
-                        const ms = e.attributes.response_time_ms ?? null;
-                        const msColour = ms === null ? "var(--secondary-text-color)"
-                            : ms <= 200 ? "#198754"
-                            : ms <= 500 ? "#e8a33d"
-                            : "#dc3545";
-                        const isOnline = e.state === "on";
-                        const access = e.attributes.access ?? "";
-                        const accessIcon = access === "Global"
-                            ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="2" y1="12" x2="22" y2="12"></line>
-                                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                            </svg>`
-                            : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"></path>
-                            </svg>`;
-                        const faviconUrl = e.attributes.favicon_url
-                            ? e.attributes.favicon_url
-                            : `https://tzer0m.co.uk/Favicon?url=${encodeURIComponent(e.attributes.url ?? "")}`;
-
-                        return `
-                            <div class="service-row" data-entity="${e.entity_id}">
-                                <img class="favicon" src="${faviconUrl}"
-                                    onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
-                                    />
-                                <div class="favicon-fallback" style="display:none;">${name.charAt(0)}</div>
-                                <span class="name">${name}</span>
-                                ${ms !== null ? `<span class="ms" style="color:${msColour};">${ms} ms</span>` : ""}
-                                <span class="access-icon">${accessIcon}</span>
-                                <span class="badge ${isOnline ? "online" : "offline"}">
-                                    ${isOnline ? "Online" : "Offline"}
-                                </span>
-                            </div>
-                        `;
-                    }).join("")}
-                </div>
-
+                <div class="grid" id="grid"></div>
                 <div class="overlay" id="overlay">
                     <div class="popout" id="popout">
                         <div class="popout-header">
@@ -234,66 +213,101 @@ class HADashboardCard extends HTMLElement {
             </ha-card>
         `;
 
-        // Popout logic
         const overlay = this.shadowRoot.getElementById("overlay");
-        const popoutTitle = this.shadowRoot.getElementById("popout-title");
-        const popoutFavicon = this.shadowRoot.getElementById("popout-favicon");
-        const popoutRows = this.shadowRoot.getElementById("popout-rows");
-        const popoutClose = this.shadowRoot.getElementById("popout-close");
 
-        this.shadowRoot.querySelectorAll(".service-row").forEach(row => {
-            row.addEventListener("click", () => {
-                const entityId = row.dataset.entity;
-                const entity = hass.states[entityId];
-                const attr = entity.attributes;
-                const name = attr.friendly_name.replace("HADashboard ", "");
+        this.shadowRoot.getElementById("popout").addEventListener("click", e => e.stopPropagation());
+        this.shadowRoot.getElementById("popout-close").addEventListener("click", () => overlay.classList.remove("open"));
+        overlay.addEventListener("click", () => overlay.classList.remove("open"));
+    }
 
-                popoutTitle.textContent = name;
-                popoutFavicon.src = attr.favicon_url
-                    ? attr.favicon_url
-                    : `https://tzer0m.co.uk/Favicon?url=${encodeURIComponent(attr.url ?? "")}`;
+    _update() {
+        const entities = this._getEntities();
+        const grid = this.shadowRoot.getElementById("grid");
+        const overlay = this.shadowRoot.getElementById("overlay");
 
-                const rows = [
-                    ["Status", entity.state === "on" ? "Online" : "Offline"],
-                    ["URL", attr.url ? `<a href="${attr.url}" target="_blank">${attr.url}</a>` : "-"],
-                    ["Type", attr.type ?? "-"],
-                    ["Access", attr.access ?? "-"],
-                    ["Device", attr.device ?? "-"],
-                    ["Local IP", attr.local_ip ?? "-"],
-                    ["Local Port", attr.local_port ?? "-"],
-                    ["Response Time", attr.response_time_ms != null ? `${attr.response_time_ms} ms` : "-"],
-                    ["Last Checked", attr.last_checked ?? "-"],
-                    ["Deploy Status", attr.deploy_status ?? "-"],
-                ];
+        // Only rebuild grid rows if entity list has changed
+        const currentIds = [...grid.querySelectorAll(".service-row")].map(r => r.dataset.entity).join(",");
+        const newIds = entities.map(e => e.entity_id).join(",");
 
-                popoutRows.innerHTML = rows.map(([label, value]) => `
-                    <div class="popout-row">
-                        <span class="popout-label">${label}</span>
-                        <span class="popout-value">${value}</span>
+        if (currentIds !== newIds) {
+            grid.innerHTML = entities.map(e => {
+                const name = e.attributes.friendly_name.replace("HADashboard ", "");
+                return `
+                    <div class="service-row" data-entity="${e.entity_id}">
+                        <img class="favicon" src="${this._faviconUrl(e.attributes)}"
+                            onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                        <div class="favicon-fallback" style="display:none;">${name.charAt(0)}</div>
+                        <span class="name">${name}</span>
+                        <span class="ms"></span>
+                        <span class="access-icon">${this._accessIcon(e.attributes.access ?? "")}</span>
+                        <span class="badge"></span>
                     </div>
-                `).join("");
+                `;
+            }).join("");
 
-                overlay.classList.add("open");
+            grid.querySelectorAll(".service-row").forEach(row => {
+                row.addEventListener("click", () => {
+                    const entity = this._hass.states[row.dataset.entity];
+                    const attr = entity.attributes;
+                    const name = attr.friendly_name.replace("HADashboard ", "");
+
+                    this.shadowRoot.getElementById("popout-title").textContent = name;
+                    this.shadowRoot.getElementById("popout-favicon").src = this._faviconUrl(attr);
+
+                    const deployEntity = Object.values(this._hass.states).find(
+                        s => s.entity_id.startsWith("sensor.") &&
+                             s.attributes.friendly_name === `HADashboard ${name} Deploy`
+                    );
+
+                    const rows = [
+                        ["Status", entity.state === "on" ? "Online" : "Offline"],
+                        ["URL", attr.url ? `<a href="${attr.url}" target="_blank">${attr.url}</a>` : "-"],
+                        ["Type", attr.type ?? "-"],
+                        ["Access", attr.access ?? "-"],
+                        ["Device", attr.device ?? "-"],
+                        ["Local IP", attr.local_ip ?? "-"],
+                        ["Local Port", attr.local_port != null ? String(attr.local_port) : "-"],
+                        ["Response Time", attr.response_time_ms != null ? `${attr.response_time_ms} ms` : "-"],
+                        ["Last Checked", attr.last_checked ?? "-"],
+                        ["Deploy Status", deployEntity ? deployEntity.state : "-"],
+                    ];
+
+                    this.shadowRoot.getElementById("popout-rows").innerHTML = rows.map(([label, value]) => `
+                        <div class="popout-row">
+                            <span class="popout-label">${label}</span>
+                            <span class="popout-value">${value}</span>
+                        </div>
+                    `).join("");
+
+                    overlay.classList.add("open");
+                });
             });
-        });
+        }
 
-        this.shadowRoot.getElementById("popout").addEventListener("click", e => {
-            e.stopPropagation();
-        });
+        // Always patch live values without rebuilding DOM
+        entities.forEach(e => {
+            const row = grid.querySelector(`[data-entity="${e.entity_id}"]`);
+            if (!row) return;
 
-        popoutClose.addEventListener("click", () => overlay.classList.remove("open"));
-        overlay.addEventListener("click", e => {
-            if (e.target === overlay) overlay.classList.remove("open");
+            const ms = e.attributes.response_time_ms ?? null;
+            const msColour = ms === null ? "var(--secondary-text-color)"
+                : ms <= 200 ? "#198754"
+                : ms <= 500 ? "#e8a33d"
+                : "#dc3545";
+            const isOnline = e.state === "on";
+
+            const msEl = row.querySelector(".ms");
+            msEl.textContent = ms !== null ? `${ms} ms` : "";
+            msEl.style.color = msColour;
+
+            const badge = row.querySelector(".badge");
+            badge.textContent = isOnline ? "Online" : "Offline";
+            badge.className = `badge ${isOnline ? "online" : "offline"}`;
         });
     }
 
     getCardSize() {
-        return Math.ceil(
-            Object.values(this._hass?.states ?? {}).filter(e =>
-                e.entity_id.startsWith("binary_sensor.") &&
-                e.attributes.friendly_name?.startsWith("HADashboard ")
-            ).length / 2
-        );
+        return Math.ceil(this._getEntities().length / 2);
     }
 }
 
