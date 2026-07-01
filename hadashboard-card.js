@@ -277,6 +277,10 @@ class HADashboardCard extends HTMLElement {
             });
         });
 
+        this.shadowRoot.getElementById("popout").addEventListener("click", e => {
+            e.stopPropagation();
+        });
+
         popoutClose.addEventListener("click", () => overlay.classList.remove("open"));
         overlay.addEventListener("click", e => {
             if (e.target === overlay) overlay.classList.remove("open");
